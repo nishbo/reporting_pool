@@ -12,6 +12,8 @@ The wrapper runs [multiprocessing.pool.starmap](https://docs.python.org/3/librar
 
 Enabling `track_failures` allows native tracking of failed function runs. For other arguments, see help(ReportingPool).
 
+For many people, a [tqdm tracking of parallel processes](https://leimao.github.io/blog/Python-tqdm-Multiprocessing/) would be a simpler solution. The Reporting Pool is useful when each process prints a lot of information that cannot be suppressed, so a high-frequency reporting is useful, and can raise exceptions for unpredictable reasons breaking program flow.
+
 Suggestions and contributions are welcome.
 
 ## Getting Started
