@@ -150,15 +150,15 @@ class ReportingPool(object):
 
         # check failures
         if self.track_failures:
-            failed_i_jobs = []
+            self.failed_i_jobs = []
             for i_job in i_jobs:
                 if shared_completion_list[i_job] == 'F':
-                    failed_i_jobs.append(i_job)
-            if len(failed_i_jobs) > 0:
+                    self.failed_i_jobs.append(i_job)
+            if len(self.failed_i_jobs) > 0:
                 print('Job{} {} {} not finished correctly.'.format(
-                    's' if len(failed_i_jobs) > 1 else '',
-                    ', '.join([str(i_job) for i_job in failed_i_jobs]),
-                    'were' if len(failed_i_jobs) > 1 else 'was'))
+                    's' if len(self.failed_i_jobs) > 1 else '',
+                    ', '.join([str(i_job) for i_job in self.failed_i_jobs]),
+                    'were' if len(self.failed_i_jobs) > 1 else 'was'))
 
         return res
 
