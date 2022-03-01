@@ -12,6 +12,8 @@ The wrapper runs [multiprocessing.pool.starmap](https://docs.python.org/3/librar
 
 Enabling `track_failures` allows native tracking of failed function runs. For other arguments, see help(ReportingPool).
 
+Suggestions and contributions are welcome.
+
 ## Getting Started
 
 This project's code is available on [GitHub](https://github.com/nishbo/reporting_pool).
