@@ -104,15 +104,17 @@ class ReportingPool(object):
         return res
 
     @staticmethod
-    def _function_wrapper_track_failure(func, shared_completion_list, i_job, *args):
+    def _function_wrapper_track_failure(func, shared_completion_list, i_job, error_reports, *args):
         shared_completion_list[i_job] = 'R'
         try:
             res = func(*args)
             shared_completion_list[i_job] = 'S'
         except Exception as e:
             res = None
-            s = 'Job #{} failed with error:\n{}\n'.format(i_job, str(e))
             shared_completion_list[i_job] = 'F'
+            print('Job #{} failed with error:\n{}\n'.format(i_job, str(e)))
+            error_reports[i_job] = str(e)
+
         return res
 
     def start(self):
@@ -121,12 +123,19 @@ class ReportingPool(object):
         """
         manager = multiprocessing.Manager()
         shared_completion_list = manager.list()
+        if self.track_failures:
+            self.error_reports = manager.list()
 
         i_jobs = list(range(len(self.p_args)))
         expanded_p_args = []
         for i_job, p_arg in enumerate(self.p_args):
             shared_completion_list.append('Q')
-            expanded_p_args.append([self.func, shared_completion_list, i_job] + p_arg)
+            if self.track_failures:
+                self.error_reports.append('')
+                expanded_p_args.append([
+                    self.func, shared_completion_list, i_job, self.error_reports] + list(p_arg))
+            else:
+                expanded_p_args.append([self.func, shared_completion_list, i_job] + list(p_arg))
 
         # reporting process
         if self.report_on_change:
@@ -155,10 +164,12 @@ class ReportingPool(object):
                 if shared_completion_list[i_job] == 'F':
                     self.failed_i_jobs.append(i_job)
             if len(self.failed_i_jobs) > 0:
-                print('Job{} {} {} not finished correctly.'.format(
+                print('{} job{} {} not finished correctly:'.format(
+                    len(self.failed_i_jobs),
                     's' if len(self.failed_i_jobs) > 1 else '',
-                    ', '.join([str(i_job) for i_job in self.failed_i_jobs]),
                     'were' if len(self.failed_i_jobs) > 1 else 'was'))
+                for i_job in self.failed_i_jobs:
+                    print('\t{}: {}'.format(i_job, self.error_reports[i_job]))
 
         return res
 
