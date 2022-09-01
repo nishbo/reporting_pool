@@ -151,8 +151,14 @@ class ReportingPool(object):
             fwf = ReportingPool._function_wrapper_track_failure
         else:
             fwf = ReportingPool._function_wrapper
-        with multiprocessing.Pool(processes=self.processes) as pool:
-            res = pool.starmap(fwf, expanded_p_args)
+        if self.processes > 1:
+            with multiprocessing.Pool(processes=self.processes) as pool:
+                res = pool.starmap(fwf, expanded_p_args)
+        else:
+            # no reason to spawn a pool
+            res = []
+            for epa in expanded_p_args:
+                res.append(fwf(*epa))
 
         # close the report
         report_process.join()
