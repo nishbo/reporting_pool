@@ -7,6 +7,9 @@ Copyright 2022 Anton Sobinov
 https://github.com/nishbo/reporting_pool
 """
 import time
+import datetime
+# import sys
+# import traceback
 import multiprocessing
 
 
@@ -47,37 +50,41 @@ class ReportingPool(object):
         self.track_failures = track_failures
 
     @staticmethod
-    def _print_report(done_list, shared_completion_list, start_time):
+    def _print_report(done_list, shared_completion_list, start_time, processes):
         scl = [int(i) for i in done_list]
         n_completed = sum(scl)
         time_passed = time.time() - start_time
-        if n_completed == 0:
+        if n_completed < processes:  # this would give a bad estimate
             est_time_left = 'NaN'
         else:
-            est_time_left = '{:.2f}'.format(time_passed / n_completed * (len(scl) - n_completed))
-        print(('Completed {:.2%} of jobs. Time elapsed: {:.2f} s, remaining: {} s.'
-               ' List: {}.').format(
+            est_time_left = time_passed / n_completed * (len(scl) - n_completed)
+            est_time_left = str(datetime.timedelta(seconds=est_time_left))
+        print(('Completed {:.2%} ({}/{}) of jobs. Time elapsed: {}, remaining: {}.'
+               ' States: {}.').format(
             float(n_completed) / len(scl),
-            time_passed,
+            n_completed,
+            len(scl),
+            datetime.timedelta(seconds=time_passed),
             est_time_left,
             ''.join(shared_completion_list)))
 
     @staticmethod
-    def _periodic_reporting_process(report_rate, shared_completion_list):
+    def _periodic_reporting_process(report_rate, shared_completion_list, processes):
         sleep_period = 1./report_rate
         done_list = [False] * len(shared_completion_list)
 
         start_time = time.time()
         while not all(done_list):
-            ReportingPool._print_report(done_list, shared_completion_list, start_time)
+            ReportingPool._print_report(done_list, shared_completion_list, start_time, processes)
 
             time.sleep(sleep_period)
             done_list = [v in ('S', 'F') for v in shared_completion_list]
 
-        print('Reporting pool finished after {:.4f} s.'.format(time.time() - start_time))
+        print('Reporting pool finished after {}.'.format(
+            datetime.timedelta(seconds=time.time() - start_time)))
 
     @staticmethod
-    def _on_change_reporting_process(report_rate, shared_completion_list):
+    def _on_change_reporting_process(report_rate, shared_completion_list, processes):
         sleep_period = 1./report_rate
         done_list = [False] * len(shared_completion_list)
         done_list_prev = [False] * len(shared_completion_list)
@@ -85,16 +92,18 @@ class ReportingPool(object):
         start_time = time.time()
 
         # print all not done, first message
-        ReportingPool._print_report(done_list, shared_completion_list, start_time)
+        ReportingPool._print_report(done_list, shared_completion_list, start_time, processes)
         while not all(done_list):
             if not all(v == vprev for v, vprev in zip(done_list, done_list_prev)):
-                ReportingPool._print_report(done_list, shared_completion_list, start_time)
+                ReportingPool._print_report(
+                    done_list, shared_completion_list, start_time, processes)
                 done_list_prev = done_list
 
             time.sleep(sleep_period)
             done_list = [v in ('S', 'F') for v in shared_completion_list]
 
-        print('Reporting pool finished after {:.4f} s.'.format(time.time() - start_time))
+        print('Reporting pool finished after {}.'.format(
+            datetime.timedelta(seconds=time.time() - start_time)))
 
     @staticmethod
     def _function_wrapper(func, shared_completion_list, i_job, *args):
@@ -114,6 +123,15 @@ class ReportingPool(object):
             shared_completion_list[i_job] = 'F'
             print('Job #{} failed with error:\n{}\n'.format(i_job, str(e)))
             error_reports[i_job] = str(e)
+        # For some reason, on my python3.7 it leads to sporadic failures of multiprocessing.pool
+        # but these messages are much more informative
+        # except Exception:
+        #     res = None
+        #     shared_completion_list[i_job] = 'F'
+        #     _, exc_value, exc_traceback = sys.exc_info()
+        #     error_str = ''.join(traceback.format_exception(None, exc_value, exc_traceback))
+        #     print('Job #{} failed with error:\n{}\n'.format(i_job, error_str))
+        #     error_reports[i_job] = error_str
 
         return res
 
@@ -143,7 +161,7 @@ class ReportingPool(object):
         else:
             rpf = ReportingPool._periodic_reporting_process
         report_process = multiprocessing.Process(
-            target=rpf, args=[self.report_rate, shared_completion_list])
+            target=rpf, args=[self.report_rate, shared_completion_list, self.processes])
         report_process.start()
 
         # pool

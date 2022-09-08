@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='reporting_pool',
-    version='0.1.0',
+    version='0.1.2',
     description='A wrapper around multiprocessing.Pool that keeps track of the completion.',
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
