@@ -54,8 +54,11 @@ class ReportingPool(object):
         scl = [int(i) for i in done_list]
         n_completed = sum(scl)
         time_passed = time.time() - start_time
-        if n_completed < processes:  # this would give a bad estimate
+        if n_completed == 0:
             est_time_left = 'NaN'
+        elif n_completed < processes:  # unstable estimate
+            est_time_left = time_passed / processes * (len(scl) - n_completed)
+            est_time_left = str(datetime.timedelta(seconds=est_time_left))
         else:
             est_time_left = time_passed / n_completed * (len(scl) - n_completed)
             est_time_left = str(datetime.timedelta(seconds=est_time_left))
@@ -139,6 +142,9 @@ class ReportingPool(object):
         """Starts the pool and reporter. Returns result obtained from starmap. For control
         variables see help on __init__ method.
         """
+        if self.processes is None:
+            self.processes = os.cpu_count()
+
         manager = multiprocessing.Manager()
         shared_completion_list = manager.list()
         if self.track_failures:
