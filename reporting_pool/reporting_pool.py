@@ -62,11 +62,13 @@ class ReportingPool(object):
         else:
             est_time_left = time_passed / n_completed * (len(scl) - n_completed)
             est_time_left = str(datetime.timedelta(seconds=est_time_left))
-        print(('Completed {:.2%} ({}/{}) of jobs. Time elapsed: {}, remaining: {}.'
+        print(('Completed {:.2%} ({}/{}{}) of jobs. Time elapsed: {}, remaining: {}.'
                ' States: {}.').format(
             float(n_completed) / len(scl),
             n_completed,
             len(scl),
+            '' if 'F' not in shared_completion_list else ' {}F'.format(
+                sum(scl == 'F' for scl in shared_completion_list)),
             datetime.timedelta(seconds=time_passed),
             est_time_left,
             ''.join(shared_completion_list)))
