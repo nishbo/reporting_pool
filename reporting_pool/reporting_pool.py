@@ -111,7 +111,7 @@ class ReportingPool(object):
             time.sleep(sleep_period)
             done_list = [v in ('S', 'F') for v in shared_completion_list]
 
-        print('Reporting pool finished after {}.'.format(
+        print('\nReporting pool finished after {}.'.format(
             datetime.timedelta(seconds=time.time() - start_time)))
 
     @staticmethod
