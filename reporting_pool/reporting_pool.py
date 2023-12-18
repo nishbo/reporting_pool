@@ -8,6 +8,7 @@ https://github.com/nishbo/reporting_pool
 """
 import time
 import datetime
+import os
 # import sys
 # import traceback
 import multiprocessing
@@ -18,7 +19,7 @@ class ReportingPool(object):
 
     """
     def __init__(self, func, p_args, processes=None, report_rate=60, report_on_change=False,
-                 track_failures=False):
+                 track_failures=False, end_line='\r'):
         """A wrapper around multiprocessing.Pool that keeps track of the completion of the jobs.
 
         Start the pool with `start()` method. All arguments can be updated.
@@ -48,9 +49,10 @@ class ReportingPool(object):
         self.report_rate = report_rate
         self.report_on_change = report_on_change
         self.track_failures = track_failures
+        self.end_line = end_line
 
     @staticmethod
-    def _print_report(done_list, shared_completion_list, start_time, processes):
+    def _print_report(done_list, shared_completion_list, start_time, processes, end_line):
         scl = [int(i) for i in done_list]
         n_completed = sum(scl)
         time_passed = time.time() - start_time
@@ -71,16 +73,17 @@ class ReportingPool(object):
                 sum(scl == 'F' for scl in shared_completion_list)),
             datetime.timedelta(seconds=time_passed),
             est_time_left,
-            ''.join(shared_completion_list)))
+            ''.join(shared_completion_list)), end=end_line)
 
     @staticmethod
-    def _periodic_reporting_process(report_rate, shared_completion_list, processes):
+    def _periodic_reporting_process(report_rate, shared_completion_list, processes, end_line):
         sleep_period = 1./report_rate
         done_list = [False] * len(shared_completion_list)
 
         start_time = time.time()
         while not all(done_list):
-            ReportingPool._print_report(done_list, shared_completion_list, start_time, processes)
+            ReportingPool._print_report(
+                done_list, shared_completion_list, start_time, processes, end_line)
 
             time.sleep(sleep_period)
             done_list = [v in ('S', 'F') for v in shared_completion_list]
@@ -89,7 +92,7 @@ class ReportingPool(object):
             datetime.timedelta(seconds=time.time() - start_time)))
 
     @staticmethod
-    def _on_change_reporting_process(report_rate, shared_completion_list, processes):
+    def _on_change_reporting_process(report_rate, shared_completion_list, processes, end_line):
         sleep_period = 1./report_rate
         done_list = [False] * len(shared_completion_list)
         done_list_prev = [False] * len(shared_completion_list)
@@ -97,11 +100,12 @@ class ReportingPool(object):
         start_time = time.time()
 
         # print all not done, first message
-        ReportingPool._print_report(done_list, shared_completion_list, start_time, processes)
+        ReportingPool._print_report(
+            done_list, shared_completion_list, start_time, processes, end_line)
         while not all(done_list):
             if not all(v == vprev for v, vprev in zip(done_list, done_list_prev)):
                 ReportingPool._print_report(
-                    done_list, shared_completion_list, start_time, processes)
+                    done_list, shared_completion_list, start_time, processes, end_line)
                 done_list_prev = done_list
 
             time.sleep(sleep_period)
@@ -169,7 +173,8 @@ class ReportingPool(object):
         else:
             rpf = ReportingPool._periodic_reporting_process
         report_process = multiprocessing.Process(
-            target=rpf, args=[self.report_rate, shared_completion_list, self.processes])
+            target=rpf,
+            args=[self.report_rate, shared_completion_list, self.processes, self.end_line])
         report_process.start()
 
         # pool
