@@ -1,6 +1,6 @@
 # Reporting Pool
 
-A simple wrapper around Python multiprocessing Pool that allows tracking of progress. 
+A simple wrapper around Python multiprocessing Pool that allows tracking of progress and storage of exceptions. 
 
 While starmap runs, a report is printed that shows % of jobs completed, time elapsed, estimated remaining time and a list of jobs statuses. Status can be: 
     Q -- queued,
@@ -23,13 +23,21 @@ This project's code is available on [GitHub](https://github.com/nishbo/reporting
 ### Prerequisites
 
 Software:
-- Python 3+ (tested on 3.7 and 3.8)
+- Python 3+ (tested on 3.7, 3.8, 3.11, 3.12)
 
 ### Installation
 
+Reporting pool can now be installed from pypi:
+
+```
+py -m pip install reporting_pool
+```
+
+#### Install from source
+
 1. Download the [repository](https://github.com/nishbo/reporting_pool) or clone it using git: `git clone https://github.com/nishbo/reporting_pool.git`.
 2. Open Terminal, Command Line, or the desired Anaconda environment in the project folder.
-3. Run `python setup.py install`.
+3. Run `py -m pip install .`.
 
 ## Examples
 

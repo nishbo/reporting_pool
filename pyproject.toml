@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "reporting_pool"
+version = "0.1.4"
+authors = [
+  { name="Anton R Sobinov", email="an.sobinov@gmail.com" },
+]
+description = "A wrapper around multiprocessing.Pool that keeps track of the completion and exceptions."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console"
+]
+
+[project.urls]
+Homepage = "https://github.com/nishbo/reporting_pool"
